@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedLedger — Sign In · Bushido Kaizen Corporation</title>
+  <link rel="stylesheet" href="/css/login.css" />
+</head>
+<body>
+  <main class="login-card">
+    <div class="brand">
+      <img src="/assets/logo.jpg" alt="Bushido Kaizen Corporation" />
+      <div class="tagline">Progress Without End. Reach Without Limits.</div>
+    </div>
+
+    <div class="gold-rule"></div>
+    <div class="app-name">MedLedger ERP</div>
+    <div class="app-sub">Sign in to continue</div>
+
+    <div class="error" id="error"></div>
+
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" autocomplete="username" placeholder="you@bushidokaizen.co.zw" />
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" autocomplete="current-password" placeholder="••••••••" />
+    </div>
+
+    <button class="primary" id="signin">Sign In</button>
+
+    <div class="footer">
+      &copy; 2026 Bushido Kaizen Corporation (Pvt) Ltd · MedLedger
+    </div>
+  </main>
+
+  <script src="/js/login.js"></script>
+</body>
+</html>

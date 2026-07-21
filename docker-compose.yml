@@ -1,0 +1,49 @@
+# Production-style stack: MedLedger + SQL Server 2022.
+#   docker compose up -d
+#   docker compose exec app npm run migrate
+#   docker compose exec app npm run seed
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: medledger-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${DB_PASSWORD:?set DB_PASSWORD in .env}"
+      MSSQL_PID: Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - medledger_mssql:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: medledger-app
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      DB_CLIENT: mssql
+      DB_HOST: sqlserver
+      DB_PORT: 1433
+      DB_NAME: ${DB_NAME:-medledger}
+      DB_USER: sa
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_ENCRYPT: "true"
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      FDMS_MODE: ${FDMS_MODE:-simulator}
+      MCAZ_MODE: ${MCAZ_MODE:-simulator}
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  medledger_mssql:

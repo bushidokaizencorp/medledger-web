@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MedLedger ERP · Bushido Kaizen Corporation</title>
+  <link rel="stylesheet" href="/css/app.css"/>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="/assets/logo.jpg" alt="BK"/>
+        <div><b>MedLedger</b><span>Bushido Kaizen</span></div>
+      </div>
+      <nav class="nav" id="nav">
+        <div class="grp">Overview</div>
+        <a data-view="dashboard" class="active">Dashboard</a>
+        <div class="grp">Sales</div>
+        <a data-view="invoices">Invoices</a>
+        <a data-view="quotations">Quotations</a>
+        <a data-view="customers">Customers</a>
+        <div class="grp">Inventory</div>
+        <a data-view="items">Items</a>
+        <a data-view="stock">Stock &amp; Batches</a>
+        <div class="grp">Finance</div>
+        <a data-view="trialbalance">Trial Balance</a>
+        <div class="grp">Compliance</div>
+        <a data-view="fiscal">Fiscalisation</a>
+      </nav>
+      <div class="foot muted">v0.1.0 · Simulator mode</div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <h1 id="viewTitle">Dashboard</h1>
+        <div class="user">
+          <span id="userName" class="muted"></span>
+          <div class="avatar" id="avatar">?</div>
+          <button class="btn ghost sm" id="logout">Sign out</button>
+        </div>
+      </header>
+      <div class="content" id="content"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="modalBg">
+    <div class="modal">
+      <div class="head"><h3 id="modalTitle">—</h3><button class="x" id="modalClose">&times;</button></div>
+      <div class="body" id="modalBody"></div>
+      <div class="foot" id="modalFoot"></div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

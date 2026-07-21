@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    name: Install, migrate, test
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit dependencies (fail on high/critical)
+        run: npm audit --audit-level=high
+        continue-on-error: false
+
+      - name: Run migrations against a throwaway SQLite database
+        env:
+          DB_CLIENT: sqlite3
+          DB_FILE: ./ci-test.db
+          JWT_SECRET: ci-only-secret-not-for-production-use-32b
+          NODE_ENV: test
+        run: npm run migrate
+
+      - name: Seed reference + demo data
+        env:
+          DB_CLIENT: sqlite3
+          DB_FILE: ./ci-test.db
+          JWT_SECRET: ci-only-secret-not-for-production-use-32b
+          NODE_ENV: test
+        run: npm run seed
+
+      - name: Run test suite (Vitest)
+        env:
+          # tests/setup.js provisions its own throwaway DB per run, independent
+          # of the migrate/seed steps above — those two just prove the
+          # migrations and seed script work standalone, the way a fresh
+          # deploy would run them.
+          NODE_ENV: test
+        run: npm test
+
+      - name: Verify the server actually boots
+        env:
+          DB_CLIENT: sqlite3
+          DB_FILE: ./ci-boot.db
+          JWT_SECRET: ci-only-secret-not-for-production-use-32b
+          NODE_ENV: production
+          PORT: 8080
+        run: |
+          npm run migrate
+          npm run seed
+          node src/server.js &
+          SERVER_PID=$!
+          for i in $(seq 1 15); do
+            if curl -fs http://localhost:8080/healthz > /dev/null; then
+              echo "Server is healthy."
+              break
+            fi
+            if [ "$i" -eq 15 ]; then
+              echo "Server did not become healthy in time."
+              kill $SERVER_PID 2>/dev/null || true
+              exit 1
+            fi
+            sleep 1
+          done
+          curl -fs http://localhost:8080/readyz | grep '"ok":true' || (echo "readyz reported not-ready" && exit 1)
+          kill $SERVER_PID 2>/dev/null || true
+
+      - name: Clean up throwaway databases
+        if: always()
+        run: rm -f ./ci-test.db ./ci-boot.db ./ci-test.db-shm ./ci-test.db-wal ./ci-boot.db-shm ./ci-boot.db-wal
+
+  docker-build:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build the production image
+        run: docker build -t medledger-web:ci .

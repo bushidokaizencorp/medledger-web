@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+**/.env
+!.env.example
+*.db
+*.db-shm
+*.db-wal
+.DS_Store
+npm-debug.log*
+coverage/
