@@ -7,6 +7,14 @@ on:
     branches: [main, develop]
   workflow_dispatch: {}
 
+concurrency:
+  group: medledger-${{ github.ref }}
+  cancel-in-progress: true
+
+
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Install, migrate, test
@@ -99,3 +107,42 @@ jobs:
 
       - name: Build the production image
         run: docker build -t medledger-web:ci .
+
+
+      - name: Build Docker image
+        run: docker build -t medledger-web:ci .
+
+      - name: Start Docker container
+        run: |
+          docker run -d \
+            --name medledger \
+            -p 8080:8080 \
+            medledger-web:ci
+
+      - name: Verify Docker health
+        run: |
+          sleep 10
+          curl http://localhost:8080/healthz
+
+
+  codeql:
+    name: CodeQL Security Scan
+    runs-on: ubuntu-latest
+
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+
+      - uses: github/codeql-action/autobuild@v3
+
+      - uses: github/codeql-action/analyze@v3  
+
+  
