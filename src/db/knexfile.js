@@ -37,7 +37,7 @@ const mssql = {
     password: env.DB_PASSWORD,
     options: {
       encrypt: env.DB_ENCRYPT, // TLS to the database
-      trustServerCertificate: env.NODE_ENV !== 'production',
+      trustServerCertificate: true,
       enableArithAbort: true,
     },
     pool: { min: 2, max: 10 },
