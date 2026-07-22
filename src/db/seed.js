@@ -147,10 +147,10 @@ async function seedPostingGroups(trx) {
 async function seedFiscalCalendar(trx, entityId, year) {
   const existing = await trx('fiscal_years').where({ legal_entity_id: entityId, code: `FY${year}` }).first();
   if (existing) return;
-  const [fyId] = await trx('fiscal_years').insert({
+  const [{ id: fyId }] = await trx('fiscal_years').insert({
     legal_entity_id: entityId, code: `FY${year}`,
     start_date: `${year}-01-01`, end_date: `${year}-12-31`, status: 'OPEN',
-  });
+  }).returning('id');
   for (let m = 1; m <= 12; m += 1) {
     const start = new Date(Date.UTC(year, m - 1, 1));
     const end = new Date(Date.UTC(year, m, 0));
@@ -166,12 +166,12 @@ async function seedFiscalCalendar(trx, entityId, year) {
 async function seedDemo(trx) {
   let entity = await trx('legal_entities').where({ code: 'BKC' }).first();
   if (!entity) {
-    const [id] = await trx('legal_entities').insert({
+    const [{ id }] = await trx('legal_entities').insert({
       code: 'BKC', name: 'Bushido Kaizen Corporation (Pvt) Ltd',
       functional_currency: 'USD', nec_council_code: 'NEC_COMMERCE',
-      taxpayer_tin: '2000123456', vat_number: '220123456',
+      taxpayer_tin: '2002506594', vat_number: null,
       created_at: now(), updated_at: now(),
-    });
+    }).returning('id');
     entity = { id };
   }
 
@@ -180,10 +180,10 @@ async function seedDemo(trx) {
   // A warehouse
   let warehouse = await trx('warehouses').where({ legal_entity_id: entity.id, code: 'MAIN' }).first();
   if (!warehouse) {
-    const [id] = await trx('warehouses').insert({
+    const [{ id }] = await trx('warehouses').insert({
       legal_entity_id: entity.id, code: 'MAIN', name: 'Harare Main Warehouse',
       address: 'Harare, Zimbabwe', gln: '6001234000001',
-    });
+    }).returning('id');
     warehouse = { id };
   }
 
@@ -206,19 +206,19 @@ async function seedDemo(trx) {
   ];
   for (const it of demoItems) {
     if (await trx('items').where({ sku: it.sku }).first()) continue;
-    const [id] = await trx('items').insert({
+    const [{ id }] = await trx('items').insert({
       ...it, item_type: 'MEDICINE', vat_rate_percent: 15, price_currency: 'USD',
       inventory_posting_group_id: invGroup ? invGroup.id : null,
       vat_product_group_id: vatStd ? vatStd.id : null,
       is_active: true, created_at: now(), updated_at: now(),
-    });
+    }).returning('id');
     // Receive opening stock
-    const [batchId] = await trx('batch_lots').insert({
+    const [{ id: batchId }] = await trx('batch_lots').insert({
       item_id: id, batch_number: `B${it.sku.slice(-3)}2026`,
       expiry_date: '2028-12-31', manufacturer: 'Demo Pharma Ltd',
       cost_price_units4: toUnits4('0.0200'), status: 'ACTIVE',
       created_at: now(), updated_at: now(),
-    });
+    }).returning('id');
     await trx('inventory_stock').insert({
       warehouse_id: warehouse.id, item_id: id, batch_lot_id: batchId,
       quantity_on_hand: 10000, quantity_reserved: 0,
